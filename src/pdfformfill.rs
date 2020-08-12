@@ -6,6 +6,8 @@ use wasm_bindgen::prelude::*;
 use std::path::Path;
 use std::collections::VecDeque;
 use wasm_bindgen::__rt::std::collections::HashMap;
+use wasm_bindgen::__rt::std::path::Display;
+use serde::{Serialize};
 
 bitflags! {
     struct ButtonFlags: u32 {
@@ -92,16 +94,32 @@ impl From<lopdf::Error> for LoadError {
 
 /// Errors That may occur while setting values in a form
 #[wasm_bindgen]
-#[derive(Debug, Error)]
-#[repr(u8)]
+#[derive(Serialize, Debug, Error)]
 pub enum ValueError {
     /// The method used to set the state is incompatible with the type of the field
-    TypeMismatch = 0,
+    TypeMismatch,
     /// One or more selected values are not valid choices
-    InvalidSelection = 1,
+    InvalidSelection,
     /// Multiple values were selected when only one was allowed
-    TooManySelected = 2,
+    TooManySelected,
 }
+
+/// Error that may occur while setting a value on a specific field
+#[wasm_bindgen]
+#[derive(Serialize, Debug)]
+pub struct FieldError {
+    error: ValueError,
+    field: String,
+    value: String,
+}
+
+#[wasm_bindgen]
+impl FieldError {
+    pub fn new(error: ValueError, field: String, value: String) -> Self {
+        FieldError { field, error, value }
+    }
+}
+
 
 trait PdfObjectDeref {
     fn deref<'a>(&self, doc: &'a Document) -> Result<&'a Object, LoadError>;
@@ -201,35 +219,35 @@ impl Form {
     ///
     /// # Panics
     /// This function will panic if the index is greater than the number of fields
-    pub fn get_type(&self, name: &String) -> FieldType {
-        // unwraps should be fine because load should have verified everything exists
-        let field = self.doc.objects.get(&self.form_fields.get(name.as_str()).unwrap()).unwrap().as_dict().unwrap();
+    pub fn get_type(&self, name: &String) -> Result<FieldType, LoadError> {
+        let field_id = self.form_fields.get(name.as_str()).ok_or(LoadError::DictionaryKeyNotFound)?;
+        let field = self.doc.objects.get(&field_id).unwrap().as_dict().unwrap();
         let obj_zero = Object::Integer(0);
         let type_str = field.get(b"FT").unwrap().as_name_str().unwrap();
         if type_str == "Btn" {
             let flags = ButtonFlags::from_bits_truncate(field.get(b"Ff").unwrap_or(&obj_zero).as_i64().unwrap() as u32);
             if flags.intersects(ButtonFlags::RADIO) {
-                FieldType::Radio
+                Ok(FieldType::Radio)
             } else if flags.intersects(ButtonFlags::PUSHBUTTON) {
-                FieldType::Button
+                Ok(FieldType::Button)
             } else {
-                FieldType::CheckBox
+                Ok(FieldType::CheckBox)
             }
         } else if type_str == "Ch" {
             let flags = ChoiceFlags::from_bits_truncate(field.get(b"Ff").unwrap_or(&obj_zero).as_i64().unwrap() as u32);
             if flags.intersects(ChoiceFlags::COBMO) {
-                FieldType::ComboBox
+                Ok(FieldType::ComboBox)
             } else {
-                FieldType::ListBox
+                Ok(FieldType::ListBox)
             }
         } else {
-            FieldType::Text
+            Ok(FieldType::Text)
         }
     }
 
     /// Gets the types of all of the fields in the form
     pub fn get_all_types(&self) -> Vec<FieldType> {
-        self.form_fields.keys().cloned().map(|f| self.get_type(&f)).collect::<Vec<FieldType>>()
+        self.form_fields.keys().cloned().map(|f| self.get_type(&f).unwrap()).collect::<Vec<FieldType>>()
     }
 
     /// Gets the state of field of the given index
@@ -239,7 +257,7 @@ impl Form {
     pub fn get_state(&self, name: &String) -> FieldState {
         let field_id = self.form_fields.get(name).unwrap();
         let field = self.doc.objects.get(&field_id).unwrap().as_dict().unwrap();
-        match self.get_type(name) {
+        match self.get_type(name).unwrap() {
             FieldType::Button => FieldState::Button,
             FieldType::Radio => FieldState::Radio {
                 selected: match field.get(b"V") {
@@ -371,15 +389,15 @@ impl Form {
     ///
     /// # Panics
     /// Will panic if n is larger than the number of fields
-    pub fn set_text(&mut self, name: &String, s: String) -> Result<(), JsValue> {
+    pub fn set_text(&mut self, name: &String, s: String) -> Result<(), ValueError> {
         match self.get_type(name) {
-            FieldType::Text => {
+            Ok(FieldType::Text) => {
                 let field = self.doc.objects.get_mut(&self.form_fields[name]).unwrap().as_dict_mut().unwrap();
                 field.set("V", Object::String(s.into_bytes(), StringFormat::Literal));
                 field.remove(b"AP");
                 Ok(())
             }
-            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
+            _ => Err(ValueError::TypeMismatch)
         }
     }
 
@@ -389,12 +407,14 @@ impl Form {
     ///
     /// # Panics
     /// Will panic if n is larger than the number of fields
-    pub fn set_radio(&mut self, name: &String, choice: String) -> Result<(), JsValue> {
+    pub fn set_radio(&mut self, name: &String, choice: String) -> Result<(), ValueError> {
         let field_id = self.form_fields.get(name).unwrap();
+
         match self.get_state(name) {
             FieldState::Radio { selected: _, options } => if options.contains(&choice) {
                 let mut doc_objects = self.doc.objects.clone();
-                let field = doc_objects.get_mut(&field_id).unwrap().as_dict_mut().unwrap();
+                let field = doc_objects.get_mut(field_id).unwrap().as_dict_mut().unwrap();
+
                 let kids = field.get_mut(b"Kids").unwrap().as_array_mut().unwrap();
                 for kid in kids {
                     let kid_reference = self.doc.objects.get_mut(&kid.as_reference().unwrap()).unwrap();
@@ -410,9 +430,9 @@ impl Form {
                 field.set("V", Object::Name(choice.into_bytes()));
                 Ok(())
             } else {
-                Err(JsValue::from(ValueError::InvalidSelection as u8))
+                Err(ValueError::InvalidSelection)
             },
-            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
+            _ => Err(ValueError::TypeMismatch)
         }
     }
 
@@ -423,16 +443,16 @@ impl Form {
     ///
     /// # Panics
     /// Will panic if n is larger than the number of fields
-    pub fn set_check_box(&mut self, name: &String, is_checked: bool) -> Result<(), JsValue> {
+    pub fn set_check_box(&mut self, name: &String, is_checked: bool) -> Result<(), ValueError> {
         match self.get_type(name) {
-            FieldType::CheckBox => {
+            Ok(FieldType::CheckBox) => {
                 let state = Object::Name({ if is_checked { "Yes" } else { "Off" } }.to_owned().into_bytes());
                 let field = self.doc.objects.get_mut(&self.form_fields.get(name).unwrap()).unwrap().as_dict_mut().unwrap();
                 field.set("V", state.clone());
                 field.set("AS", state);
                 Ok(())
             }
-            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
+            _ => Err(ValueError::TypeMismatch)
         }
     }
 
@@ -474,23 +494,34 @@ impl Form {
     }
 
     /// Fills the formula
-    ///
-    /// # Panics!
-    pub fn fill(&mut self, fields: HashMap<String, String>) {
-        for (key, value) in fields {
+    pub fn fill(&mut self, fields: HashMap<String, String>) -> Result<(), FieldError> {
+        for (k, value) in fields {
+            let key = if self.form_fields.contains_key(&k) {
+                k
+            } else {
+                let mut new_name = k.clone();
+                new_name.push_str("[0]");
+                new_name
+            };
+
+            let map_v = value.clone();
+            let map_err = |x: ValueError| FieldError::new(x, key.clone(), map_v);
+
             match self.get_type(&key) {
-                FieldType::Radio => {
-                    self.set_radio(&key, value).unwrap();
+                Ok(FieldType::Radio) => {
+                    self.set_radio(&key, value).map_err(map_err)?;
                 }
-                FieldType::CheckBox => {
-                    self.set_check_box(&key, value.to_lowercase().eq("true")).unwrap();
+                Ok(FieldType::CheckBox) => {
+                    self.set_check_box(&key, value.to_lowercase().eq("true")).map_err(map_err)?;
                 }
-                FieldType::Text => {
-                    self.set_text(&key, value).unwrap();
+                Ok(FieldType::Text) => {
+                    self.set_text(&key, value).map_err(map_err)?;
                 }
                 _ => {}
             };
         }
+
+        Ok(())
     }
 
 
@@ -549,7 +580,7 @@ impl JsForm {
     pub fn fill(&mut self, fields: JsValue) -> Result<(), JsValue> {
         let map: HashMap<String, String> = serde_wasm_bindgen::from_value(fields)?;
 
-        self.form.fill(map);
+        self.form.fill(map).map_err(|x| serde_wasm_bindgen::to_value(&x).unwrap())?;
 
         Ok(())
     }
