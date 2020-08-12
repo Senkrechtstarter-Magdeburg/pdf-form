@@ -5,7 +5,6 @@ use std::{str, io};
 use wasm_bindgen::prelude::*;
 use std::path::Path;
 use std::collections::VecDeque;
-use wasm_bindgen::__rt::std::io::BufWriter;
 use wasm_bindgen::__rt::std::collections::HashMap;
 
 bitflags! {
@@ -37,7 +36,7 @@ bitflags! {
 #[wasm_bindgen]
 pub struct Form {
     doc: Document,
-    form_fields: HashMap<String, ObjectId>
+    form_fields: HashMap<String, ObjectId>,
 }
 
 /// The possible types of fillable form fields in a PDF
@@ -176,19 +175,19 @@ impl Form {
     }
 
     fn get_form_name(string_u8: Vec<u8>) -> Result<String, LoadError> {
-            // Assuming the string is UTF16. First 2 Bytes indicate UTF16, so we skip them
-            // Converting 8bit array to 16bit array
-            let mut string_u16 = vec![0; string_u8.len()];
-            for (i, byte) in string_u8.iter().skip(2).enumerate() {
-                string_u16[i / 2] = if i % 2 == 0 { (u16::from(*byte)) << 8 } else { u16::from(*byte) };
-            }
+        // Assuming the string is UTF16. First 2 Bytes indicate UTF16, so we skip them
+        // Converting 8bit array to 16bit array
+        let mut string_u16 = vec![0; string_u8.len()];
+        for (i, byte) in string_u8.iter().skip(2).enumerate() {
+            string_u16[i / 2] = if i % 2 == 0 { (u16::from(*byte)) << 8 } else { u16::from(*byte) };
+        }
 
-            // The first \0 indicates the end of a string
-            let str_end = string_u16.iter().position(|x| *x == 0 as u16).unwrap_or(string_u16.len());
+        // The first \0 indicates the end of a string
+        let str_end = string_u16.iter().position(|x| *x == 0 as u16).unwrap_or(string_u16.len());
 
-            if let Ok(ref name) = String::from_utf16(&string_u16[..str_end]) {
-                return Ok(name.into());
-            }
+        if let Ok(ref name) = String::from_utf16(&string_u16[..str_end]) {
+            return Ok(name.into());
+        }
 
         Err(LoadError::UnexpectedType)
     }
@@ -474,6 +473,26 @@ impl Form {
         self.form_fields.keys().cloned().collect::<Vec<String>>()
     }
 
+    /// Fills the formula
+    ///
+    /// # Panics!
+    pub fn fill(&mut self, fields: HashMap<String, String>) {
+        for (key, value) in fields {
+            match self.get_type(&key) {
+                FieldType::Radio => {
+                    self.set_radio(&key, value).unwrap();
+                }
+                FieldType::CheckBox => {
+                    self.set_check_box(&key, value.to_lowercase().eq("true")).unwrap();
+                }
+                FieldType::Text => {
+                    self.set_text(&key, value).unwrap();
+                }
+                _ => {}
+            };
+        }
+    }
+
 
     /// Saves the form to the specified path
     pub fn save<P: AsRef<Path>>(&mut self, path: P) -> Result<(), io::Error> {
@@ -483,21 +502,6 @@ impl Form {
     /// Saves the form to the specified path
     pub fn save_to<W: io::Write>(&mut self, target: &mut W) -> Result<(), io::Error> {
         self.doc.save_to(target)
-    }
-}
-
-#[wasm_bindgen]
-pub struct JsForm {
-    form: Form
-}
-
-impl JsForm {
-    /// Takes a reader containing a PDF with a fillable form, analyzes the content, and attempts to
-    /// identify all of the fields the form has.
-    pub fn load_from(form: Form) -> Self {
-        JsForm {
-            form
-        }
     }
 }
 
@@ -518,21 +522,43 @@ mod tests {
 }
 
 #[wasm_bindgen]
+pub struct JsForm {
+    form: Form
+}
+
+impl JsForm {
+    /// Takes a reader containing a PDF with a fillable form, analyzes the content, and attempts to
+    /// identify all of the fields the form has.
+    pub fn load_from(form: Form) -> Self {
+        JsForm {
+            form
+        }
+    }
+}
+
+#[wasm_bindgen]
 impl JsForm {
     pub fn get_field_names(&self) -> Box<[JsValue]> {
-        let mut names = self.form.get_field_names();
+        let names = self.form.get_field_names();
 
         let result: Vec<JsValue> = names.iter().map(|x| JsValue::from(x)).collect();
 
         return result.into_boxed_slice();
     }
 
+    pub fn fill(&mut self, fields: JsValue) -> Result<(), JsValue> {
+        let map: HashMap<String, String> = serde_wasm_bindgen::from_value(fields)?;
+
+        self.form.fill(map);
+
+        Ok(())
+    }
 
     pub fn save_to_buf(&mut self) -> Box<[u8]> {
         let mut buffer: Vec<u8> = vec![];
         let mut_buffer: &mut Vec<u8> = buffer.as_mut();
 
-        self.form.save_to(mut_buffer);
+        self.form.save_to(mut_buffer).unwrap();
 
         return buffer.into_boxed_slice();
     }

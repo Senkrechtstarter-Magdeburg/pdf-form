@@ -14,7 +14,6 @@ use crate::pdfformfill::{Form, FieldType, JsForm};
 use wasm_bindgen::__rt::std::io::{BufReader};
 use serde::Serializer;
 use crate::utils::set_panic_hook;
-use serde_wasm_bindgen::Error;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.

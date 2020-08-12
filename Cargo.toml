@@ -17,7 +17,9 @@ serde-wasm-bindgen = "0.1.3"
 lopdf = "0.25.0"
 bitflags = "1.0.1"
 derive-error = "0.0.4"
-serde = "1.0.115"
+serde = { version = "1.0.115", features = ["derive"] }
+web-sys = { version = "0.3.44", features = ['console'] }
+
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -38,9 +40,3 @@ wasm-bindgen-test = "0.3.13"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
-
-[dependencies.web-sys]
-version = "0.3.44"
-features = [
-    'console'
-]
