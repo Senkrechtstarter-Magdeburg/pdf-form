@@ -10,7 +10,7 @@ mod pdfformfill;
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use crate::pdfformfill::{Form, FieldType};
+use crate::pdfformfill::{Form, FieldType, JsForm};
 use wasm_bindgen::__rt::std::io::{BufReader};
 use serde::Serializer;
 use crate::utils::set_panic_hook;
@@ -67,12 +67,12 @@ pub fn get_field_types(p: JsValue) -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn load_form(bytes: &[u8]) -> Form {
+pub fn load_form(bytes: &[u8]) -> JsForm {
     set_panic_hook();
 
     let reader = BufReader::new(bytes);
 
     let form = Form::load_from(reader);
 
-    return form.unwrap();
+    return JsForm::load_from(form.unwrap());
 }

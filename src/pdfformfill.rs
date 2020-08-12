@@ -1,4 +1,4 @@
-use lopdf::{Document, Object, ObjectId, StringFormat, Error};
+use lopdf::{Document, Object, ObjectId, StringFormat, Error, Dictionary};
 
 use std::{str, io};
 
@@ -6,6 +6,7 @@ use wasm_bindgen::prelude::*;
 use std::path::Path;
 use std::collections::VecDeque;
 use wasm_bindgen::__rt::std::io::BufWriter;
+use wasm_bindgen::__rt::std::collections::HashMap;
 
 bitflags! {
     struct ButtonFlags: u32 {
@@ -36,7 +37,7 @@ bitflags! {
 #[wasm_bindgen]
 pub struct Form {
     doc: Document,
-    form_ids: Vec<ObjectId>,
+    form_fields: HashMap<String, ObjectId>
 }
 
 /// The possible types of fillable form fields in a PDF
@@ -132,8 +133,8 @@ impl Form {
     }
 
     fn load_doc(doc: Document) -> Result<Self, LoadError> {
-        let mut form_ids = Vec::new();
         let mut queue = VecDeque::new();
+        let mut map: HashMap<String, ObjectId> = HashMap::new();
         // Block so borrow of doc ends before doc is moved into the result
         {
             // Get the form's top level fields
@@ -157,7 +158,12 @@ impl Form {
                 if let &Object::Dictionary(ref dict) = obj {
                     // If the field has FT, it actually takes input.  Save this
                     if dict.get(b"FT").is_ok() {
-                        form_ids.push(objref.as_reference().unwrap());
+                        let field_id = objref.as_reference().unwrap();
+
+                        if let Ok(Object::String(ref string_u8, _)) = dict.get(b"T") {
+                            let name = Form::get_form_name(string_u8.clone())?;
+                            map.insert(name, field_id);
+                        }
                     }
                     // If this field has kids, they might have FT, so add them to the queue
                     if let Ok(&Object::Array(ref kids)) = dict.get(b"Kids") {
@@ -166,21 +172,39 @@ impl Form {
                 }
             }
         }
-        Ok(Form { doc, form_ids })
+        Ok(Form { doc, form_fields: map })
+    }
+
+    fn get_form_name(string_u8: Vec<u8>) -> Result<String, LoadError> {
+            // Assuming the string is UTF16. First 2 Bytes indicate UTF16, so we skip them
+            // Converting 8bit array to 16bit array
+            let mut string_u16 = vec![0; string_u8.len()];
+            for (i, byte) in string_u8.iter().skip(2).enumerate() {
+                string_u16[i / 2] = if i % 2 == 0 { (u16::from(*byte)) << 8 } else { u16::from(*byte) };
+            }
+
+            // The first \0 indicates the end of a string
+            let str_end = string_u16.iter().position(|x| *x == 0 as u16).unwrap_or(string_u16.len());
+
+            if let Ok(ref name) = String::from_utf16(&string_u16[..str_end]) {
+                return Ok(name.into());
+            }
+
+        Err(LoadError::UnexpectedType)
     }
 
     /// Returns the number of fields the form has
     pub fn len(&self) -> usize {
-        self.form_ids.len()
+        self.form_fields.len()
     }
 
     /// Gets the type of field of the given index
     ///
     /// # Panics
     /// This function will panic if the index is greater than the number of fields
-    pub fn get_type(&self, n: usize) -> FieldType {
+    pub fn get_type(&self, name: &String) -> FieldType {
         // unwraps should be fine because load should have verified everything exists
-        let field = self.doc.objects.get(&self.form_ids[n]).unwrap().as_dict().unwrap();
+        let field = self.doc.objects.get(&self.form_fields.get(name.as_str()).unwrap()).unwrap().as_dict().unwrap();
         let obj_zero = Object::Integer(0);
         let type_str = field.get(b"FT").unwrap().as_name_str().unwrap();
         if type_str == "Btn" {
@@ -206,20 +230,17 @@ impl Form {
 
     /// Gets the types of all of the fields in the form
     pub fn get_all_types(&self) -> Vec<FieldType> {
-        let mut res = Vec::with_capacity(self.len());
-        for i in 0..self.len() {
-            res.push(self.get_type(i))
-        };
-        res
+        self.form_fields.keys().cloned().map(|f| self.get_type(&f)).collect::<Vec<FieldType>>()
     }
 
     /// Gets the state of field of the given index
     ///
     /// # Panics
     /// This function will panic if the index is greater than the number of fields
-    pub fn get_state(&self, n: usize) -> FieldState {
-        let field = self.doc.objects.get(&self.form_ids[n]).unwrap().as_dict().unwrap();
-        match self.get_type(n) {
+    pub fn get_state(&self, name: &String) -> FieldState {
+        let field_id = self.form_fields.get(name).unwrap();
+        let field = self.doc.objects.get(&field_id).unwrap().as_dict().unwrap();
+        match self.get_type(name) {
             FieldType::Button => FieldState::Button,
             FieldType::Radio => FieldState::Radio {
                 selected: match field.get(b"V") {
@@ -229,7 +250,7 @@ impl Form {
                         Err(_) => "".to_owned(),
                     },
                 },
-                options: self.get_possibilities(self.form_ids[n]),
+                options: self.get_possibilities(field_id.clone()),
             },
             FieldType::CheckBox => FieldState::CheckBox {
                 is_checked:
@@ -346,22 +367,20 @@ impl Form {
         res
     }
 
-    /// If the field at index `n` is a checkbox field, toggles the check box based on the value
-    /// `is_checked`.
-    /// If it is not a checkbox field, returns ValueError
+    /// If the field at index `n` is a text field, fills in that field with the text `s`.
+    /// If it is not a text field, returns ValueError
     ///
     /// # Panics
     /// Will panic if n is larger than the number of fields
-    pub fn set_check_box(&mut self, n: usize, is_checked: bool) -> Result<(), ValueError> {
-        match self.get_type(n) {
-            FieldType::CheckBox => {
-                let state = Object::Name({ if is_checked { "Yes" } else { "Off" } }.to_owned().into_bytes());
-                let field = self.doc.objects.get_mut(&self.form_ids[n]).unwrap().as_dict_mut().unwrap();
-                field.set("V", state.clone());
-                field.set("AS", state);
+    pub fn set_text(&mut self, name: &String, s: String) -> Result<(), JsValue> {
+        match self.get_type(name) {
+            FieldType::Text => {
+                let field = self.doc.objects.get_mut(&self.form_fields[name]).unwrap().as_dict_mut().unwrap();
+                field.set("V", Object::String(s.into_bytes(), StringFormat::Literal));
+                field.remove(b"AP");
                 Ok(())
             }
-            _ => Err(ValueError::TypeMismatch)
+            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
         }
     }
 
@@ -371,11 +390,12 @@ impl Form {
     ///
     /// # Panics
     /// Will panic if n is larger than the number of fields
-    pub fn set_radio(&mut self, n: usize, choice: String) -> Result<(), ValueError> {
-        match self.get_state(n) {
+    pub fn set_radio(&mut self, name: &String, choice: String) -> Result<(), JsValue> {
+        let field_id = self.form_fields.get(name).unwrap();
+        match self.get_state(name) {
             FieldState::Radio { selected: _, options } => if options.contains(&choice) {
                 let mut doc_objects = self.doc.objects.clone();
-                let field = doc_objects.get_mut(&self.form_ids[n]).unwrap().as_dict_mut().unwrap();
+                let field = doc_objects.get_mut(&field_id).unwrap().as_dict_mut().unwrap();
                 let kids = field.get_mut(b"Kids").unwrap().as_array_mut().unwrap();
                 for kid in kids {
                     let kid_reference = self.doc.objects.get_mut(&kid.as_reference().unwrap()).unwrap();
@@ -391,24 +411,46 @@ impl Form {
                 field.set("V", Object::Name(choice.into_bytes()));
                 Ok(())
             } else {
-                Err(ValueError::InvalidSelection)
+                Err(JsValue::from(ValueError::InvalidSelection as u8))
             },
-            _ => Err(ValueError::TypeMismatch)
+            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
         }
     }
+
+
+    /// If the field at index `n` is a checkbox field, toggles the check box based on the value
+    /// `is_checked`.
+    /// If it is not a checkbox field, returns ValueError
+    ///
+    /// # Panics
+    /// Will panic if n is larger than the number of fields
+    pub fn set_check_box(&mut self, name: &String, is_checked: bool) -> Result<(), JsValue> {
+        match self.get_type(name) {
+            FieldType::CheckBox => {
+                let state = Object::Name({ if is_checked { "Yes" } else { "Off" } }.to_owned().into_bytes());
+                let field = self.doc.objects.get_mut(&self.form_fields.get(name).unwrap()).unwrap().as_dict_mut().unwrap();
+                field.set("V", state.clone());
+                field.set("AS", state);
+                Ok(())
+            }
+            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
+        }
+    }
+
 
     /// If the field at index `n` is a listbox or comboox field, selects the options in `choice`
     /// If it is not a listbox or combobox field or one of the choices is not a valid option, or if too many choices are selected, returns ValueError
     ///
     /// # Panics
     /// Will panic if n is larger than the number of fields
-    pub fn set_choice(&mut self, n: usize, choices: Vec<String>) -> Result<(), ValueError> {
-        match self.get_state(n) {
+    pub fn set_choice(&mut self, name: &String, choices: Vec<String>) -> Result<(), ValueError> {
+        let field_id = self.form_fields.get(name).unwrap();
+        match self.get_state(name) {
             FieldState::ListBox { selected: _, options, multiselect } | FieldState::ComboBox { selected: _, options, multiselect } => if choices.iter().fold(true, |a, h| options.contains(h) && a) {
                 if !multiselect && choices.len() > 1 {
                     Err(ValueError::TooManySelected)
                 } else {
-                    let field = self.doc.objects.get_mut(&self.form_ids[n]).unwrap().as_dict_mut().unwrap();
+                    let field = self.doc.objects.get_mut(&field_id).unwrap().as_dict_mut().unwrap();
                     match choices.len() {
                         0 => field.set("V", Object::Null),
                         1 => field.set("V", Object::String(choices[0].clone().into_bytes(),
@@ -424,37 +466,73 @@ impl Form {
         }
     }
 
+    pub fn get_field_by_name(&self, name: String) -> &Dictionary {
+        self.doc.objects.get(self.form_fields.get(name.as_str()).unwrap()).unwrap().as_dict().unwrap()
+    }
+
+    pub fn get_field_names(&self) -> Vec<String> {
+        self.form_fields.keys().cloned().collect::<Vec<String>>()
+    }
+
 
     /// Saves the form to the specified path
     pub fn save<P: AsRef<Path>>(&mut self, path: P) -> Result<(), io::Error> {
         self.doc.save(path).map(|_| ())
     }
+
+    /// Saves the form to the specified path
+    pub fn save_to<W: io::Write>(&mut self, target: &mut W) -> Result<(), io::Error> {
+        self.doc.save_to(target)
+    }
 }
 
 #[wasm_bindgen]
-impl Form {
-    /// If the field at index `n` is a text field, fills in that field with the text `s`.
-    /// If it is not a text field, returns ValueError
-    ///
-    /// # Panics
-    /// Will panic if n is larger than the number of fields
-    pub fn set_text(&mut self, n: usize, s: String) -> Result<(), JsValue> {
-        match self.get_type(n) {
-            FieldType::Text => {
-                let field = self.doc.objects.get_mut(&self.form_ids[n]).unwrap().as_dict_mut().unwrap();
-                field.set("V", Object::String(s.into_bytes(), StringFormat::Literal));
-                field.remove(b"AP");
-                Ok(())
-            }
-            _ => Err(JsValue::from(ValueError::TypeMismatch as u8))
+pub struct JsForm {
+    form: Form
+}
+
+impl JsForm {
+    /// Takes a reader containing a PDF with a fillable form, analyzes the content, and attempts to
+    /// identify all of the fields the form has.
+    pub fn load_from(form: Form) -> Self {
+        JsForm {
+            form
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn test_get_names() -> Result<(), LoadError> {
+        let form = Form::load("./tests/assets/Formblatt_1.pdf")?;
+
+        let names = form.get_field_names();
+
+        assert!(names.len() > 0);
+
+        Ok(())
+    }
+}
+
+#[wasm_bindgen]
+impl JsForm {
+    pub fn get_field_names(&self) -> Box<[JsValue]> {
+        let mut names = self.form.get_field_names();
+
+        let result: Vec<JsValue> = names.iter().map(|x| JsValue::from(x)).collect();
+
+        return result.into_boxed_slice();
+    }
+
 
     pub fn save_to_buf(&mut self) -> Box<[u8]> {
         let mut buffer: Vec<u8> = vec![];
         let mut_buffer: &mut Vec<u8> = buffer.as_mut();
 
-        self.doc.save_to(mut_buffer);
+        self.form.save_to(mut_buffer);
 
         return buffer.into_boxed_slice();
     }
