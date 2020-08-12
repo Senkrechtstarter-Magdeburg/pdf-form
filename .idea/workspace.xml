@@ -22,22 +22,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b6d8c175-fe54-4c40-a1af-a12608e09e39" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.appveyor.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.cargo-ok" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/pdfformfill.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.travis.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LICENSE_APACHE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LICENSE_MIT" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/pdfformfill.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/web.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pdfformfill.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdfformfill.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,8 +61,21 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
+    <property name="ts.external.directory.path" value="$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external" />
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Cargo Command.Expand pdfformfill">
+    <configuration name="Expand pdfformfill" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="channel" value="DEFAULT" />
+      <option name="command" value="expand --lib --color=always --theme=GitHub --tests" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Unnamed" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="channel" value="DEFAULT" />
       <option name="command" value="build " />
@@ -92,6 +93,15 @@
         <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <list>
+      <item itemvalue="Cargo Command.Unnamed" />
+      <item itemvalue="Cargo Command.Expand pdfformfill" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cargo Command.Expand pdfformfill" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
@@ -104,7 +114,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1597154781801</updated>
-      <workItem from="1597154784018" duration="9539000" />
+      <workItem from="1597154784018" duration="18396000" />
     </task>
     <servers />
   </component>
@@ -127,37 +137,41 @@
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
     <state x="2334" y="1279" width="1084" height="732" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597159311477" />
-    <state x="2682" y="1318" width="378" height="556" key="#com.intellij.ide.util.MemberChooser" timestamp="1597163378189">
+    <state x="2676" y="1252" width="378" height="556" key="#com.intellij.ide.util.MemberChooser" timestamp="1597221630604">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state x="2682" y="1318" width="378" height="556" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597163378189" />
-    <state width="1878" height="261" key="GridCell.Tab.0.bottom" timestamp="1597163598151">
+    <state x="2676" y="1252" width="378" height="556" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597221630604" />
+    <state x="1918" y="1191" width="1924" height="971" key="DiffContextDialog" timestamp="1597170950114">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state width="1878" height="261" key="GridCell.Tab.0.bottom/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597163598151" />
-    <state width="1878" height="261" key="GridCell.Tab.0.center" timestamp="1597163598151">
+    <state x="1918" y="1191" width="1924" height="971" key="DiffContextDialog/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597170950114" />
+    <state width="1878" height="261" key="GridCell.Tab.0.bottom" timestamp="1597170553373">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state width="1878" height="261" key="GridCell.Tab.0.center/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597163598151" />
-    <state width="1878" height="261" key="GridCell.Tab.0.left" timestamp="1597163598151">
+    <state width="1878" height="261" key="GridCell.Tab.0.bottom/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597170553373" />
+    <state width="1878" height="261" key="GridCell.Tab.0.center" timestamp="1597170553372">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state width="1878" height="261" key="GridCell.Tab.0.left/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597163598151" />
-    <state width="1878" height="261" key="GridCell.Tab.0.right" timestamp="1597163598151">
+    <state width="1878" height="261" key="GridCell.Tab.0.center/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597170553372" />
+    <state width="1878" height="261" key="GridCell.Tab.0.left" timestamp="1597170553372">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state width="1878" height="261" key="GridCell.Tab.0.right/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597163598151" />
-    <state x="1918" y="1191" width="1924" height="971" key="com.intellij.history.integration.ui.views.FileHistoryDialog" timestamp="1597161450712">
+    <state width="1878" height="261" key="GridCell.Tab.0.left/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597170553372" />
+    <state width="1878" height="261" key="GridCell.Tab.0.right" timestamp="1597170553372">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state x="1918" y="1191" width="1924" height="971" key="com.intellij.history.integration.ui.views.FileHistoryDialog/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597161450712" />
+    <state width="1878" height="261" key="GridCell.Tab.0.right/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597170553372" />
+    <state x="1918" y="1191" width="1924" height="971" key="com.intellij.history.integration.ui.views.FileHistoryDialog" timestamp="1597164505348">
+      <screen x="1920" y="1080" width="1920" height="1080" />
+    </state>
+    <state x="1918" y="1191" width="1924" height="971" key="com.intellij.history.integration.ui.views.FileHistoryDialog/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597164505348" />
     <state x="2488" y="1257" width="774" height="767" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1597161322282">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
     <state x="2488" y="1257" width="774" height="767" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597161322282" />
-    <state x="2543" y="1386" width="672" height="678" key="search.everywhere.popup" timestamp="1597160864629">
+    <state x="2543" y="1386" width="672" height="678" key="search.everywhere.popup" timestamp="1597165566887">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state x="2543" y="1386" width="672" height="678" key="search.everywhere.popup/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597160864629" />
+    <state x="2543" y="1386" width="672" height="678" key="search.everywhere.popup/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597165566887" />
   </component>
 </project>

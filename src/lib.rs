@@ -3,6 +3,7 @@ extern crate lopdf;
 extern crate bitflags;
 #[macro_use]
 extern crate derive_error;
+extern crate web_sys;
 
 
 mod pdfformfill;
@@ -10,11 +11,10 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 use crate::pdfformfill::{Form, FieldType};
-use wasm_bindgen::__rt::std::io::{BufReader, BufWriter, Read};
-use serde_wasm_bindgen::Error;
-use std::convert::TryInto;
-use bitflags::_core::cmp::min;
+use wasm_bindgen::__rt::std::io::{BufReader};
 use serde::Serializer;
+use crate::utils::set_panic_hook;
+use serde_wasm_bindgen::Error;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -43,11 +43,18 @@ impl serde::ser::Serialize for pdfformfill::FieldType {
 
 #[wasm_bindgen]
 pub fn greet() {
+    set_panic_hook();
+
+    web_sys:: console::log_1(&"Hello, world!".into());
     alert("Hello, pdfformfill!");
 }
 
 #[wasm_bindgen]
 pub fn get_field_types(p: JsValue) -> JsValue {
+    set_panic_hook();
+
+    web_sys::console::log_1(&p);
+
     let bytes: Vec<u8> = serde_wasm_bindgen::from_value(p).unwrap();
     let r = BufReader::new(&bytes[..]);
     let result = Form::load_from(r);
@@ -57,4 +64,15 @@ pub fn get_field_types(p: JsValue) -> JsValue {
     let fields = &form.get_all_types()[..];
 
     return serde_wasm_bindgen::to_value(&fields).unwrap();
+}
+
+#[wasm_bindgen]
+pub fn load_form(bytes: &[u8]) -> Form {
+    set_panic_hook();
+
+    let reader = BufReader::new(bytes);
+
+    let form = Form::load_from(reader);
+
+    return form.unwrap();
 }
