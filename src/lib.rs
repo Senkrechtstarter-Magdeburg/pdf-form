@@ -49,7 +49,7 @@ impl JsForm {
     pub fn fill(&mut self, fields: JsValue) -> Result<(), JsValue> {
         let map: HashMap<String, String> = serde_wasm_bindgen::from_value(fields)?;
 
-        self.form.fill(map).map_err(|x| serde_wasm_bindgen::to_value(&x).unwrap())?;
+        self.form.fill(&map).map_err(|x| serde_wasm_bindgen::to_value(&x).unwrap())?;
 
         Ok(())
     }

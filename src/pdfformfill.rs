@@ -1,6 +1,7 @@
 use lopdf::{Document, Object, ObjectId, StringFormat, Error, Dictionary};
 
 use std::{str, io};
+use regex::Regex;
 
 use wasm_bindgen::prelude::*;
 use std::path::Path;
@@ -176,9 +177,9 @@ impl Form {
                     if dict.get(b"FT").is_ok() {
                         let field_id = objref.as_reference().unwrap();
 
-                        if let Ok(Object::String(ref string_u8, _)) = dict.get(b"T") {
-                            let name = Form::get_form_name(string_u8.clone())?;
-                            map.insert(name, field_id);
+                        if let Some(ref name) = Form::get_full_name(&doc, &field_id) {
+                            // let name = Form::get_form_name(string_u8.clone())?;
+                            map.insert(name.clone(), field_id);
                         }
                     }
                     // If this field has kids, they might have FT, so add them to the queue
@@ -191,7 +192,35 @@ impl Form {
         Ok(Form { doc, form_fields: map })
     }
 
-    fn get_form_name(string_u8: Vec<u8>) -> Result<String, LoadError> {
+    fn get_full_name(doc: &Document, field_id: &ObjectId) -> Option<String> {
+        let field = doc.objects.get(field_id)?;
+        let field_dict = field.as_dict().ok()?;
+
+        let field_name = Form::get_field_name(doc, field_id)?;
+
+
+
+        if let Ok(Object::Reference(ref parent_ref)) = field_dict.get(b"Parent") {
+            let parent_name = Form::get_full_name(doc, parent_ref)?;
+            return Some(format!("{}.{}", parent_name, field_name));
+        } else {
+            return Some(field_name);
+        }
+    }
+
+    fn get_field_name(doc: &Document, field_id: &ObjectId) -> Option<String> {
+        let field = doc.objects.get(field_id).unwrap();
+        let field_dict = field.as_dict().unwrap();
+        if let Ok(Object::String(ref f_string_u8, _)) = field_dict.get(b"T") {
+            if let Some(ref field_name) = Form::encode_form_name(f_string_u8.clone()) {
+                return Some(field_name.clone());
+            }
+        }
+
+        None
+    }
+
+    fn encode_form_name(string_u8: Vec<u8>) -> Option<String> {
         // Assuming the string is UTF16. First 2 Bytes indicate UTF16, so we skip them
         // Converting 8bit array to 16bit array
         let mut string_u16 = vec![0; string_u8.len()];
@@ -203,10 +232,10 @@ impl Form {
         let str_end = string_u16.iter().position(|x| *x == 0 as u16).unwrap_or(string_u16.len());
 
         if let Ok(ref name) = String::from_utf16(&string_u16[..str_end]) {
-            return Ok(name.into());
+            return Some(name.into());
         }
 
-        Err(LoadError::UnexpectedType)
+        None
     }
 
     /// Returns the number of fields the form has
@@ -493,31 +522,49 @@ impl Form {
     }
 
     /// Fills the formula
-    pub fn fill(&mut self, fields: HashMap<String, String>) -> Result<(), FieldError> {
-        for (k, value) in fields {
-            let key = if self.form_fields.contains_key(&k) {
-                k
-            } else {
-                let mut new_name = k.clone();
-                new_name.push_str("[0]");
-                new_name
-            };
+    pub fn fill(&mut self, fields: &HashMap<String, String>) -> Result<(), FieldError> {
+        let r = Regex::new(r"\[\d+]").unwrap();
 
-            let map_v = value.clone();
-            let map_err = |x: ValueError| FieldError::new(x, key.clone(), map_v);
+        for field_name in self.form_fields.clone().keys() {
+            let mut part_names: Vec<_> = field_name.split(".").collect();
 
-            match self.get_type(&key) {
+            let mut name: String = field_name.clone();
+            let mut i = 0;
+            while part_names.len() >= 1 && !fields.contains_key(&name) {
+                if i == 0 {
+                    i = 1;
+                    name = r.replace(name.as_str(), "").into()
+                } else {
+                    i = 0;
+                    part_names = part_names[1..].to_vec();
+                    name = part_names.join(".").into();
+                }
+            }
+
+            // The field was not provided
+            if part_names.is_empty() {
+                continue;
+            }
+
+            web_sys:: console::log_1(&field_name.clone().into());
+
+
+            let map_v = fields.get(&name).unwrap();
+            let map_err = |x: ValueError| FieldError::new(x, name.clone(), map_v.clone());
+
+            match self.get_type(&field_name) {
                 Ok(FieldType::Radio) => {
-                    self.set_radio(&key, value).map_err(map_err)?;
+                    self.set_radio(&field_name, map_v.clone()).map_err(map_err)?;
                 }
                 Ok(FieldType::CheckBox) => {
-                    self.set_check_box(&key, value.to_lowercase().eq("true")).map_err(map_err)?;
+                    self.set_check_box(&field_name, map_v.clone().to_lowercase().eq("true")).map_err(map_err)?;
                 }
                 Ok(FieldType::Text) => {
-                    self.set_text(&key, value).map_err(map_err)?;
+                    self.set_text(&field_name, map_v.clone()).map_err(map_err)?;
                 }
                 _ => {}
             };
+
         }
 
         Ok(())
