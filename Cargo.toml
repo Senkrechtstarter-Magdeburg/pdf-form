@@ -1,8 +1,13 @@
 [package]
 name = "pdfformfill"
 version = "0.1.0"
-authors = ["Björn Gehrke <5106696+b-gehrke@users.noreply.github.com>"]
+authors = ["Björn Gehrke"]
 edition = "2018"
+license-file = "LICENSE"
+
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -19,7 +24,6 @@ bitflags = "1.0.1"
 derive-error = "0.0.4"
 serde = { version = "1.0.115", features = ["derive"] }
 web-sys = { version = "0.3.44", features = ['console'] }
-
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

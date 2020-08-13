@@ -10,10 +10,10 @@ mod pdfformfill;
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use crate::pdfformfill::{Form, FieldType, JsForm};
+use crate::pdfformfill::Form;
 use wasm_bindgen::__rt::std::io::{BufReader};
-use serde::Serializer;
 use crate::utils::set_panic_hook;
+use std::collections::HashMap;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -22,48 +22,48 @@ use crate::utils::set_panic_hook;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern {
-    fn alert(s: &str);
+pub struct JsForm {
+    form: Form
 }
 
-impl serde::ser::Serialize for pdfformfill::FieldType {
-    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error> where
-        S: Serializer {
-        serializer.collect_str(match self {
-            FieldType::Radio => "Radio",
-            FieldType::Button => "Button",
-            FieldType::CheckBox => "CheckBox",
-            FieldType::ListBox => "ListBox",
-            FieldType::ComboBox => "ComboBox",
-            FieldType::Text => "Text",
-        })
+impl JsForm {
+    /// Takes a reader containing a PDF with a fillable form, analyzes the content, and attempts to
+    /// identify all of the fields the form has.
+    pub fn load_from(form: Form) -> Self {
+        JsForm {
+            form
+        }
     }
 }
 
 #[wasm_bindgen]
-pub fn greet() {
-    set_panic_hook();
+impl JsForm {
+    pub fn get_field_names(&self) -> Box<[JsValue]> {
+        let names = self.form.get_field_names();
 
-    web_sys:: console::log_1(&"Hello, world!".into());
-    alert("Hello, pdfformfill!");
+        let result: Vec<JsValue> = names.iter().map(|x| JsValue::from(x)).collect();
+
+        return result.into_boxed_slice();
+    }
+
+    pub fn fill(&mut self, fields: JsValue) -> Result<(), JsValue> {
+        let map: HashMap<String, String> = serde_wasm_bindgen::from_value(fields)?;
+
+        self.form.fill(map).map_err(|x| serde_wasm_bindgen::to_value(&x).unwrap())?;
+
+        Ok(())
+    }
+
+    pub fn save_to_buf(&mut self) -> Box<[u8]> {
+        let mut buffer: Vec<u8> = vec![];
+        let mut_buffer: &mut Vec<u8> = buffer.as_mut();
+
+        self.form.save_to(mut_buffer).unwrap();
+
+        return buffer.into_boxed_slice();
+    }
 }
 
-#[wasm_bindgen]
-pub fn get_field_types(p: JsValue) -> JsValue {
-    set_panic_hook();
-
-    web_sys::console::log_1(&p);
-
-    let bytes: Vec<u8> = serde_wasm_bindgen::from_value(p).unwrap();
-    let r = BufReader::new(&bytes[..]);
-    let result = Form::load_from(r);
-
-    let form = result.unwrap();
-
-    let fields = &form.get_all_types()[..];
-
-    return serde_wasm_bindgen::to_value(&fields).unwrap();
-}
 
 #[wasm_bindgen]
 pub fn load_form(bytes: &[u8]) -> JsForm {

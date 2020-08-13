@@ -22,7 +22,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b6d8c175-fe54-4c40-a1af-a12608e09e39" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/pdfformfill.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pdfformfill.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE_APACHE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE_MIT" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pdfformfill.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/pdfformfill.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -159,7 +164,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1597154781801</updated>
-      <workItem from="1597154784018" duration="45137000" />
+      <workItem from="1597154784018" duration="48692000" />
     </task>
     <task id="LOCAL-00001" summary="implemented save in wasm rust">
       <created>1597222438098</created>
@@ -182,7 +187,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597247859333</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Implemented better error handling for JS">
+      <created>1597264033647</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1597264033647</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -203,7 +215,8 @@
     <MESSAGE value="implemented save in wasm rust" />
     <MESSAGE value="Changed to form_fields with form field names" />
     <MESSAGE value="Implemented fill pdf from JS with object { [fieldName]: fieldValue }" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implemented fill pdf from JS with object { [fieldName]: fieldValue }" />
+    <MESSAGE value="Implemented better error handling for JS" />
+    <option name="LAST_COMMIT_MESSAGE" value="Implemented better error handling for JS" />
   </component>
   <component name="WindowStateProjectService">
     <state x="2334" y="1279" width="1084" height="732" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1597159311477">
@@ -214,14 +227,14 @@
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
     <state x="2676" y="1252" width="378" height="556" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597221630604" />
-    <state x="2611" y="1382" width="528" height="495" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1597224133526">
+    <state x="2609" y="1360" width="528" height="495" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1597311699299">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state x="2611" y="1382" width="528" height="495" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597224133526" />
-    <state x="2427" y="1127" width="883" height="873" key="CommitChangelistDialog2" timestamp="1597247859270">
+    <state x="2609" y="1360" width="528" height="495" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597311699299" />
+    <state x="2425" y="1105" width="883" height="873" key="CommitChangelistDialog2" timestamp="1597264033576">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
-    <state x="2427" y="1127" width="883" height="873" key="CommitChangelistDialog2/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597247859270" />
+    <state x="2425" y="1105" width="883" height="873" key="CommitChangelistDialog2/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597264033576" />
     <state width="448" height="485" key="DebuggerActiveHint" timestamp="1597237870468">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
@@ -262,6 +275,10 @@
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>
     <state width="1878" height="211" key="GridCell.Tab.1.right/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597242556985" />
+    <state width="678" height="445" key="SwitcherDM" timestamp="1597312331485">
+      <screen x="1920" y="1080" width="1920" height="1080" />
+    </state>
+    <state width="678" height="445" key="SwitcherDM/0.0.1920.1080/1920.0.1920.1080/3840.0.1920.1080/0.1080.1920.1080/1920.1080.1920.1080@1920.1080.1920.1080" timestamp="1597312331485" />
     <state x="2473" y="1368" width="804" height="522" key="Vcs.Push.Dialog.v2" timestamp="1597222446198">
       <screen x="1920" y="1080" width="1920" height="1080" />
     </state>

@@ -6,7 +6,6 @@ use wasm_bindgen::prelude::*;
 use std::path::Path;
 use std::collections::VecDeque;
 use wasm_bindgen::__rt::std::collections::HashMap;
-use wasm_bindgen::__rt::std::path::Display;
 use serde::{Serialize};
 
 bitflags! {
@@ -549,48 +548,5 @@ mod tests {
         assert!(names.len() > 0);
 
         Ok(())
-    }
-}
-
-#[wasm_bindgen]
-pub struct JsForm {
-    form: Form
-}
-
-impl JsForm {
-    /// Takes a reader containing a PDF with a fillable form, analyzes the content, and attempts to
-    /// identify all of the fields the form has.
-    pub fn load_from(form: Form) -> Self {
-        JsForm {
-            form
-        }
-    }
-}
-
-#[wasm_bindgen]
-impl JsForm {
-    pub fn get_field_names(&self) -> Box<[JsValue]> {
-        let names = self.form.get_field_names();
-
-        let result: Vec<JsValue> = names.iter().map(|x| JsValue::from(x)).collect();
-
-        return result.into_boxed_slice();
-    }
-
-    pub fn fill(&mut self, fields: JsValue) -> Result<(), JsValue> {
-        let map: HashMap<String, String> = serde_wasm_bindgen::from_value(fields)?;
-
-        self.form.fill(map).map_err(|x| serde_wasm_bindgen::to_value(&x).unwrap())?;
-
-        Ok(())
-    }
-
-    pub fn save_to_buf(&mut self) -> Box<[u8]> {
-        let mut buffer: Vec<u8> = vec![];
-        let mut_buffer: &mut Vec<u8> = buffer.as_mut();
-
-        self.form.save_to(mut_buffer).unwrap();
-
-        return buffer.into_boxed_slice();
     }
 }
