@@ -3,7 +3,7 @@ name = "pdfformfill"
 version = "0.1.0"
 authors = ["Björn Gehrke"]
 edition = "2018"
-license-file = "LICENSE"
+license = "MIT"
 
 
 [package.metadata.wasm-pack.profile.release]
