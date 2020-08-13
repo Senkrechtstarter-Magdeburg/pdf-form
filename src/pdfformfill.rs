@@ -546,9 +546,6 @@ impl Form {
                 continue;
             }
 
-            web_sys:: console::log_1(&field_name.clone().into());
-
-
             let map_v = fields.get(&name).unwrap();
             let map_err = |x: ValueError| FieldError::new(x, name.clone(), map_v.clone());
 

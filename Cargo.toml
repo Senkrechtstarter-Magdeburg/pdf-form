@@ -1,6 +1,6 @@
 [package]
 name = "pdfformfill"
-version = "0.1.0"
+version = "0.1.4"
 authors = ["Björn Gehrke"]
 edition = "2018"
 license = "MIT"
