@@ -1,13 +1,12 @@
-use lopdf::{Document, Object, ObjectId, StringFormat, Error, Dictionary};
-
-use std::{str, io};
-use regex::Regex;
-
-use wasm_bindgen::prelude::*;
-use std::path::Path;
+use std::{io, str};
 use std::collections::VecDeque;
+use std::path::Path;
+
+use lopdf::{Dictionary, Document, Error, Object, ObjectId, StringFormat};
+use regex::Regex;
+use serde::Serialize;
 use wasm_bindgen::__rt::std::collections::HashMap;
-use serde::{Serialize};
+use wasm_bindgen::prelude::*;
 
 bitflags! {
     struct ButtonFlags: u32 {
@@ -89,6 +88,28 @@ pub enum LoadError {
 impl From<lopdf::Error> for LoadError {
     fn from(_: Error) -> Self {
         LoadError::UnexpectedType
+    }
+}
+
+trait ToPdfUTF16 {
+    fn to_pdf_utf16(&self) -> Vec<u8>;
+}
+
+impl ToPdfUTF16 for String {
+    fn to_pdf_utf16(&self) -> Vec<u8> {
+        let bytes: Vec<u16> = self.encode_utf16().collect();
+        let mut res: Vec<u8> = vec![0; bytes.len() * 2 + 2];
+
+        // first bits indicate the string is UTF16 encoded
+        res[0] = 0xfe;
+        res[1] = 0xff;
+
+        for (i, byte) in bytes.iter().enumerate() {
+            res[2 * i + 2] = (*byte >> 8) as u8;
+            res[2 * i + 3] = (*byte & 0xff) as u8;
+        }
+
+        res
     }
 }
 
@@ -421,7 +442,8 @@ impl Form {
         match self.get_type(name) {
             Ok(FieldType::Text) => {
                 let field = self.doc.objects.get_mut(&self.form_fields[name]).unwrap().as_dict_mut().unwrap();
-                field.set("V", Object::String(s.into_bytes(), StringFormat::Literal));
+
+                field.set("V", Object::String(s.to_pdf_utf16(), StringFormat::Literal));
                 field.remove(b"AP");
                 Ok(())
             }
@@ -590,6 +612,22 @@ mod tests {
         let names = form.get_field_names();
 
         assert!(names.len() > 0);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_write_utf8() -> Result<(), LoadError> {
+        let mut form = Form::load("./tests/assets/Formblatt_1.modified.pdf")?;
+
+        let mut map: HashMap<String, String> = HashMap::new();
+        map.insert(String::from("Name_Eingabe"), String::from("Björn"));
+        form.fill(&map);
+
+        form.save("./Formblatt_1.pdf")?;
+
+
+        assert!(true);
 
         Ok(())
     }
